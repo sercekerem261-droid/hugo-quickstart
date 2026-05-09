@@ -1,0 +1,173 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyNQc4LcBhTvQ60ZQzPiI7jq",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/sercekerem261-droid/hugo-quickstart/blob/main/google%20amca%20ai%20as%C4%B1l\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import IPython\n",
+        "from google.colab import output\n",
+        "import re, random, requests\n",
+        "from datetime import datetime, timedelta\n",
+        "\n",
+        "# --- 1. GOOGLE AMCA'NIN BEYNİ ---\n",
+        "if 'hafiza' not in locals():\n",
+        "    hafiza = {\"kullanici_adi\": \"Evlat\"}\n",
+        "\n",
+        "bilgiler = [\"Karıncalar uyumaz.\", \"Bal asla bozulmaz.\", \"Ahtapotların 3 kalbi vardır.\"]\n",
+        "sozler = [\"Hayat bir yolculuktur.\", \"Bilgi en büyük hazinedir.\"]\n",
+        "\n",
+        "def ai_islem(mesaj, kaydedilmis_isim=None):\n",
+        "    if kaydedilmis_isim: hafiza[\"kullanici_adi\"] = kaydedilmis_isim\n",
+        "    mesaj_temiz = mesaj.lower().strip()\n",
+        "    tr_vakti = datetime.utcnow() + timedelta(hours=3)\n",
+        "    hitap = f\" {hafiza['kullanici_adi']}\"\n",
+        "\n",
+        "    # 🤖 İSİM SORGUSU\n",
+        "    if \"adın ne\" in mesaj_temiz:\n",
+        "        return f\"Benim adım Google Amca{hitap}! Sana her konuda yardımcı olmaya çalışırım.\", None\n",
+        "\n",
+        "    # 🌦️ HAVA DURUMU\n",
+        "    if \"hava\" in mesaj_temiz:\n",
+        "        sehir = \"\".join([k for k in mesaj.split() if k.lower() not in [\"hava\", \"durumu\", \"nasıl\", \"nedir\"]]) or \"Istanbul\"\n",
+        "        try:\n",
+        "            res = requests.get(f\"https://open-meteo.com{sehir}&count=1\").json()\n",
+        "            lat, lon = res['results'][0]['latitude'], res['results'][0]['longitude']\n",
+        "            w = requests.get(f\"https://open-meteo.com{lat}&longitude={lon}&current_weather=true\").json()\n",
+        "            return f\"{sehir} şehrinde sıcaklık {w['current_weather']['temperature']} derece{hitap}.\", None\n",
+        "        except: return \"Hava durumunu şu an bulamadım yeğenim.\", None\n",
+        "\n",
+        "    # 💡 BİLGİ VE SÖZ\n",
+        "    if \"bilgi\" in mesaj_temiz:\n",
+        "        return f\"Bak bu ilginçtir: {random.choice(bilgiler)}\", None\n",
+        "    if \"söz\" in mesaj_temiz:\n",
+        "        return f\"Şu sözü unutma: {random.choice(sozler)}\", None\n",
+        "\n",
+        "    # 📝 KULLANICI İSMİ ÖĞRENME\n",
+        "    if \"benim adım\" in mesaj_temiz:\n",
+        "        isim = mesaj.split()[-1].capitalize()\n",
+        "        hafiza[\"kullanici_adi\"] = isim\n",
+        "        return f\"Tamamdır{hitap}, senin adını {isim} olarak aklıma yazdım!\", isim\n",
+        "\n",
+        "    # 🕒 SAAT / TARİH / MATEMATİK\n",
+        "    if \"saat\" in mesaj_temiz:\n",
+        "        return f\"Saat şu an {tr_vakti.strftime('%H:%M')}{hitap}.\", None\n",
+        "\n",
+        "    if re.match(r'^[0-9+\\-*/().]+$', mesaj_temiz.replace(\" \", \"\")):\n",
+        "        try: return f\"Hesapladım yeğenim, sonuç: {eval(mesaj_temiz.replace(' ', ''))}.\", None\n",
+        "        except: return \"Bu hesabı yapamadım.\", None\n",
+        "\n",
+        "    return f\"Seni dinliyorum{hitap}. Google Amca'na istediğini sorabilirsin!\", None\n",
+        "\n",
+        "# --- 2. BAĞLANTI VE ARAYÜZ ---\n",
+        "output.register_callback('notebook.handle_message', lambda t, n: IPython.display.JSON(dict(zip(['answer', 'newName'], ai_islem(t, n)))))\n",
+        "\n",
+        "display(IPython.display.HTML('''\n",
+        "    <div style=\"background: #f8f9fa; color: #202124; padding: 25px; border-radius: 20px; max-width: 500px; border: 1px solid #dadce0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: 'Product Sans', Arial, sans-serif;\">\n",
+        "        <h3 id=\"baslik\" style=\"text-align:center; color: #4285F4;\">🔵🔴 GOOGLE AMCA 🟡🟢</h3>\n",
+        "        <div id=\"chat\" style=\"height: 200px; overflow-y: auto; background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #efefef;\"></div>\n",
+        "        <div style=\"display: flex; gap: 8px;\">\n",
+        "            <input id=\"in\" type=\"text\" style=\"flex-grow: 1; padding: 12px; border: 1px solid #dfe1e5; border-radius: 24px; outline: none;\" placeholder=\"Google Amca'ya sor...\">\n",
+        "            <button onclick=\"yolla()\" style=\"padding: 10px 20px; background: #4285F4; color: white; border: none; border-radius: 24px; cursor: pointer; font-weight: bold;\">ARA</button>\n",
+        "        </div>\n",
+        "    </div>\n",
+        "    <script>\n",
+        "        var saklananIsim = localStorage.getItem(\"ai_user_name\") || \"\";\n",
+        "        if(saklananIsim) document.getElementById(\"baslik\").innerText = \"GOOGLE AMCA | \" + saklananIsim;\n",
+        "        async function yolla(){\n",
+        "            var v = document.getElementById(\"in\").value; if(!v) return;\n",
+        "            document.getElementById(\"chat\").innerHTML += \"<div style='color:#70757a;'>👤: \"+v+\"</div>\";\n",
+        "            const r = await google.colab.kernel.invokeFunction('notebook.handle_message', [v, saklananIsim], {});\n",
+        "            const d = r.data['application/json'];\n",
+        "            if(d.newName) {\n",
+        "                saklananIsim = d.newName;\n",
+        "                localStorage.setItem(\"ai_user_name\", d.newName);\n",
+        "                document.getElementById(\"baslik\").innerText = \"GOOGLE AMCA | \" + d.newName;\n",
+        "            }\n",
+        "            document.getElementById(\"chat\").innerHTML += \"<div style='color:#3c4043; margin-top:8px;'>👴: \"+d.answer+\"</div>\";\n",
+        "            document.getElementById(\"in\").value = \"\";\n",
+        "            document.getElementById(\"chat\").scrollTop = 9999;\n",
+        "            var s = new SpeechSynthesisUtterance(d.answer); s.lang = 'tr-TR'; s.pitch = 0.8; s.rate = 1;\n",
+        "            window.speechSynthesis.speak(s);\n",
+        "        }\n",
+        "    </script>\n",
+        "'''))\n"
+      ],
+      "metadata": {
+        "id": "DEE9VSV7beT3",
+        "outputId": "c03f7e40-9305-4393-915f-4dfb360d6959",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 398
+        }
+      },
+      "execution_count": 33,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ],
+            "text/html": [
+              "\n",
+              "    <div style=\"background: #f8f9fa; color: #202124; padding: 25px; border-radius: 20px; max-width: 500px; border: 1px solid #dadce0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: 'Product Sans', Arial, sans-serif;\">\n",
+              "        <h3 id=\"baslik\" style=\"text-align:center; color: #4285F4;\">🔵🔴 GOOGLE AMCA 🟡🟢</h3>\n",
+              "        <div id=\"chat\" style=\"height: 200px; overflow-y: auto; background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #efefef;\"></div>\n",
+              "        <div style=\"display: flex; gap: 8px;\">\n",
+              "            <input id=\"in\" type=\"text\" style=\"flex-grow: 1; padding: 12px; border: 1px solid #dfe1e5; border-radius: 24px; outline: none;\" placeholder=\"Google Amca'ya sor...\">\n",
+              "            <button onclick=\"yolla()\" style=\"padding: 10px 20px; background: #4285F4; color: white; border: none; border-radius: 24px; cursor: pointer; font-weight: bold;\">ARA</button>\n",
+              "        </div>\n",
+              "    </div>\n",
+              "    <script>\n",
+              "        var saklananIsim = localStorage.getItem(\"ai_user_name\") || \"\";\n",
+              "        if(saklananIsim) document.getElementById(\"baslik\").innerText = \"GOOGLE AMCA | \" + saklananIsim;\n",
+              "        async function yolla(){\n",
+              "            var v = document.getElementById(\"in\").value; if(!v) return;\n",
+              "            document.getElementById(\"chat\").innerHTML += \"<div style='color:#70757a;'>👤: \"+v+\"</div>\";\n",
+              "            const r = await google.colab.kernel.invokeFunction('notebook.handle_message', [v, saklananIsim], {});\n",
+              "            const d = r.data['application/json'];\n",
+              "            if(d.newName) {\n",
+              "                saklananIsim = d.newName;\n",
+              "                localStorage.setItem(\"ai_user_name\", d.newName);\n",
+              "                document.getElementById(\"baslik\").innerText = \"GOOGLE AMCA | \" + d.newName;\n",
+              "            }\n",
+              "            document.getElementById(\"chat\").innerHTML += \"<div style='color:#3c4043; margin-top:8px;'>👴: \"+d.answer+\"</div>\";\n",
+              "            document.getElementById(\"in\").value = \"\";\n",
+              "            document.getElementById(\"chat\").scrollTop = 9999;\n",
+              "            var s = new SpeechSynthesisUtterance(d.answer); s.lang = 'tr-TR'; s.pitch = 0.8; s.rate = 1;\n",
+              "            window.speechSynthesis.speak(s);\n",
+              "        }\n",
+              "    </script>\n"
+            ]
+          },
+          "metadata": {}
+        }
+      ]
+    }
+  ]
+}
